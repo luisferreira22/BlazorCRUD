@@ -1,0 +1,164 @@
+﻿@page "/InvoiceList"
+@using Model
+@using Interface
+@inject IInvoiceService InvoiceService
+@inject IInvoiceDetailService InvoiceDetailService
+@inject IClientService ClientService
+@inject IProductService ProductService
+
+<h1>Invoice List</h1>
+<p>This page shows a list of invoice for the selected Month</p>
+@if (invoices == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <RadzenDatePicker @bind-Value=@value DateFormat="d" Change=@(args => OnChange(args, "DatePicker", "MM/dd/yyyy")) />
+    <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="3" AllowSorting="true" ExpandMode="DataGridExpandMode.Single"
+                    Data="@invoices" TItem="Invoice" RowExpand="RowExpand">
+        <Template Context="invoices">
+            <RadzenDataGrid AllowFiltering="true" AllowPaging="true" AllowSorting="true" Data="@invoices.invoiceDetail" TItem="InvoiceDetail">
+                <Columns>
+                    <RadzenDataGridColumn TItem="InvoiceDetail" Property="invoices.invoiceDetail.product.Picture" Title="Image">
+                        <Template Context="detail">
+                            <RadzenImage Path="@detail.product.Picture" style="width: 40px; height: 40px; border-radius: 8px;" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="InvoiceDetail" Property="invoices.invoiceDetail.product.Name" Title="Prduct Name" />
+                    <RadzenDataGridColumn TItem="InvoiceDetail" Property="invoices.invoiceDetail.Amount" Title="Amount" />
+                    <RadzenDataGridColumn TItem="InvoiceDetail" Property="invoices.invoiceDetail.SellPrice" Title="Sell Price">
+                        <Template Context="detail">
+                            @String.Format(new System.Globalization.CultureInfo("en-US"), "{0:C}", detail.SellPrice)
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="InvoiceDetail" Property="invoices.invoiceDetail.Total" Title="Total">
+                        <Template Context="detail">
+                            @String.Format(new System.Globalization.CultureInfo("en-US"), "{0:C}", detail.Total)
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </Template>
+        <Columns>
+            <RadzenDataGridColumn Width="100px" TItem="Invoice" Property="InvoiceId" Title="Invoice Number" />
+            <RadzenDataGridColumn Width="200px" TItem="Invoice" Property="client.Name" Title="Client Name" />
+            <RadzenGridColumn Title="Issue Date" Property="IssueDate" TItem="Invoice">
+                <Template Context="data">
+                    @String.Format("{0:d}", data.IssueDate)
+                </Template>
+            </RadzenGridColumn>
+            <RadzenDataGridColumn Width="100px" TItem="Invoice" Property="Paid" Title="Paid" />
+        </Columns>
+    </RadzenDataGrid>
+}
+
+
+
+@code {
+    DateTime value = DateTime.Now;
+    IEnumerable<DateTime> dates = new DateTime[] { DateTime.Today.AddDays(-1), DateTime.Today.AddDays(1) };
+    private IEnumerable<Invoice> invoices;
+    RadzenDataGrid<Invoice> grid;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+
+            await SetGrid();
+
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+    }
+
+    protected async Task SetGrid() {
+        try
+        {
+
+            invoices = await InvoiceService.getInvoiceByMonth(value);
+            foreach (var item in invoices)
+            {
+                item.client = await ClientService.getClientDetails(item.ClientId);
+
+                var pinvoiceDetail = await InvoiceDetailService.getInvoiceDetailsByInvoiceId(item.InvoiceId);
+                foreach (var itemaux in pinvoiceDetail)
+                {
+                    InvoiceDetail oinvoiceDetail = new InvoiceDetail();
+                    oinvoiceDetail.ProductId = itemaux.ProductId;
+                    oinvoiceDetail.SellPrice = itemaux.SellPrice;
+                    oinvoiceDetail.InvoiceDetailId = itemaux.InvoiceDetailId;
+                    oinvoiceDetail.Amount = itemaux.Amount;
+                    oinvoiceDetail.Total = itemaux.Total;
+                    itemaux.product = await ProductService.getProductDetails(itemaux.ProductId);
+                    oinvoiceDetail.product.ProductId = itemaux.product.ProductId;
+                    oinvoiceDetail.product.Description = itemaux.product.Description;
+                    oinvoiceDetail.product.UnitPrice = itemaux.product.UnitPrice;
+                    oinvoiceDetail.product.Name = itemaux.product.Name;
+                    oinvoiceDetail.product.Picture = itemaux.product.Picture;
+                    item.invoiceDetail.Add(oinvoiceDetail);
+                }
+            }
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+
+    }
+
+    protected async Task OnChange(DateTime? valueaux, string name, string format)
+    {
+        try
+        {
+            value = valueaux.Value;
+            await SetGrid();
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+
+    void DateRenderSpecial(DateRenderEventArgs args)
+    {
+        if (dates.Contains(args.Date))
+        {
+            args.Attributes.Add("style", "background-color: #ff6d41; border-color: white;");
+        }
+    }
+
+    void DateRender(DateRenderEventArgs args)
+    {
+        args.Disabled = dates.Contains(args.Date);
+    }
+
+
+    void RowExpand(Invoice invoice)
+    {
+        if (invoice.invoiceDetail == null)
+        {
+            //
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (grid != null) {
+                grid.ExpandRow(invoices.FirstOrDefault());
+                StateHasChanged();
+            }
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+
+}

@@ -1,0 +1,105 @@
+﻿@page "/ProductDetails"
+@page "/ProductDetails/{id:int}"
+@using Model
+@using Interface
+@inject IProductService ProductService
+@inject NavigationManager NavigationManager
+
+<RadzenTemplateForm Data="@oproduct">
+    <div class="row col-12">
+        <div class="col-4">
+            <RadzenFieldset Text="Client Profil">
+                @if (oproduct.Picture != null)
+                {
+
+                }
+                <img src="@oproduct.Picture" style="width: 250px; height: 250px;"><br /><br />
+
+                <InputFile OnChange="@onInputFIle" multiple></InputFile>
+            </RadzenFieldset>
+        </div>
+        <div class="col-8">
+            <RadzenFieldset Text="Product Details">
+                <div class="row">
+                    <div class="col-md-3 align-items-lg-start d-flex">
+                        <RadzenLabel Text="Name" />
+                    </div>
+                    <div class="col-md-7 fieldSpace">
+                        <RadzenTextBox Name="Name" Stryle="width:100%" @bind-Value="oproduct.Name" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 align-items-lg-start d-flex">
+                        <RadzenLabel Text="Unit Price" />
+                    </div>
+                    <div class="col-md-7 fieldSpace">
+                        <RadzenNumeric TValue="Decimal" Name="UnitPrice" Stryle="width:100%" @bind-Value="oproduct.UnitPrice" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 align-items-lg-start d-flex">
+                        <RadzenLabel Text="Description" />
+                    </div>
+                    <div class="col-md-7 fieldSpace">
+                        <RadzenTextArea MaxLength="150" Rows="3" Name="Description" Stryle="width:100%" @bind-Value="oproduct.Description" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 align-items-lg-start d-flex"></div>
+                    <div class="col-md-7 fieldSpace">
+                        <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" Click="@(args=>saveProduct())" />
+                        <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Secondary" Click="@(args=>deleteProduct())" />
+                    </div>
+                </div>
+
+
+            </RadzenFieldset>
+        </div>
+    </div>
+
+
+</RadzenTemplateForm>
+
+
+@code {
+    [Parameter]
+    public int id { get; set; }
+    Product oproduct = new Product();
+    protected async Task saveProduct()
+    {
+        await ProductService.saveProduct(oproduct);
+        NavigationManager.NavigateTo("/ProductList");
+    }
+
+    protected void deleteProduct()
+    {
+        NavigationManager.NavigateTo("/ProductList");
+
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        if (id == 0)
+        {
+
+        }
+        else
+        {
+            oproduct = await ProductService.getProductDetails(id);
+
+        }
+    }
+    private async Task onInputFIle(InputFileChangeEventArgs inputFIleChangeEventArgs)
+    {
+
+        //get the file
+        var file = inputFIleChangeEventArgs.File;
+        //read that file in a byte array
+        var buffer = new byte[file.Size];
+        await file.OpenReadStream().ReadAsync(buffer);
+        //convert byte array to base 64 string
+        oproduct.Picture = $"data:image/png;base64,{Convert.ToBase64String(buffer)}";
+
+    }
+
+}

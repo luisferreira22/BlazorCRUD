@@ -1,0 +1,57 @@
+﻿@page "/ClientList"
+@using Model
+@using Interface
+@inject IClientService ClientService 
+
+<h1>Client List</h1>
+<p>This page shows a list of all client</p>
+@if (clients == null)
+{
+<p><em>Loading...</em></p>
+}
+else {
+    <RadzenGrid AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                 FilterMode="FilterMode.Advanced" AllowPaging="true" PageSize="5" AllowSorting="true" Data="@clients"
+                  TItem="Client" ColumnWidth="200px">
+        <Columns>
+            <RadzenGridColumn Title="Name" Property="Name" TItem="Client" />
+            <RadzenGridColumn Title="Address" Property="Address" TItem="Client" />
+            <RadzenGridColumn Title="Phone Number" Property="PhoneNumber" TItem="Client" />
+            <RadzenGridColumn Title="Email" Property="Email" TItem="Client" />
+            <RadzenGridColumn Title="Born Date" Property="BornDate" TItem="Client">
+                <Template Context="data">
+                    @String.Format("{0:d}", data.BornDate)
+                </Template>
+            </RadzenGridColumn>
+            <RadzenGridColumn Title="Edit" TItem="Client">
+                <Template Context="data">
+                    <RadzenLink Path=@($"/ClientDetails/{data.ClientId}") Text="Edit" />
+                </Template>
+
+            </RadzenGridColumn>
+            
+        </Columns>
+
+    </RadzenGrid>
+}
+
+
+@code { 
+    private IEnumerable<Client> clients;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            clients = await ClientService.getAllClient();
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+
+        
+    }
+
+}

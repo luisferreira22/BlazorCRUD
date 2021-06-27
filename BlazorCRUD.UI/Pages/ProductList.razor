@@ -1,0 +1,53 @@
+﻿@page "/ProductList"
+@using Model
+@using Interface
+@inject IProductService ProductService
+
+<h1>Product List</h1>
+<p>This page shows a list of all Products</p>
+@if (products == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <RadzenGrid AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                FilterMode="FilterMode.Advanced" AllowPaging="true" PageSize="5" AllowSorting="true" Data="@products"
+                TItem="Product" ColumnWidth="200px">
+        <Columns>
+            <RadzenGridColumn Title="Name" Property="Name" TItem="Product" />
+            <RadzenGridColumn Title="Unit Price" Property="UnitPrice" TItem="Product" />
+            <RadzenGridColumn Title="Description" Property="Description" TItem="Product" />
+            <RadzenGridColumn Title="Edit" TItem="Product">
+                <Template Context="data">
+                    <RadzenLink Path=@($"/ProductDetails/{data.ProductId}") Text="Edit" />
+                </Template>
+
+            </RadzenGridColumn>
+
+        </Columns>
+
+    </RadzenGrid>
+}
+
+
+@code {
+    private IEnumerable<Product> products;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            products = await ProductService.getAllProduct();
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+
+
+    }
+
+}
+

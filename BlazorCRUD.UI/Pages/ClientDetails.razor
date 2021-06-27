@@ -1,0 +1,110 @@
+﻿@page "/ClientDetails"
+@page "/ClientDetails/{id:int}"
+@using Model
+@using Interface
+@inject IClientService ClientService 
+@inject NavigationManager NavigationManager
+
+
+<RadzenTemplateForm Data="@oclient">
+    <div class="row col-12">
+        <div class="col-4">
+            <RadzenFieldset Text="Client Profil">
+                @if (oclient.Picture != null) { 
+                
+                }
+                    <img src="@oclient.Picture" style="width: 250px; height: 250px;"><br /><br />
+                
+                <InputFile OnChange="@onInputFIle" multiple></InputFile>
+            </RadzenFieldset>
+        </div>
+            <div class="col-8">
+                <RadzenFieldset Text="Client Details">
+                    <div class="row">
+                        <div class="col-md-3 align-items-lg-start d-flex">
+                            <RadzenLabel Text="Name" />
+                        </div>
+                        <div class="col-md-7 fieldSpace">
+                            <RadzenTextBox Name="Name" Stryle="width:100%" @bind-Value="oclient.Name" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 align-items-lg-start d-flex">
+                            <RadzenLabel Text="Address" />
+                        </div>
+                        <div class="col-md-7 fieldSpace">
+                            <RadzenTextBox Name="Address" Stryle="width:100%" @bind-Value="oclient.Address" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 align-items-lg-start d-flex">
+                            <RadzenLabel Text="Phone Number" />
+                        </div>
+                        <div class="col-md-7 fieldSpace">
+                            <RadzenTextBox Name="PhoneNumber" Stryle="width:100%" @bind-Value="oclient.PhoneNumber" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 align-items-lg-start d-flex">
+                            <RadzenLabel Text="Born Date" />
+                        </div>
+                        <div class="col-md-7 fieldSpace">
+                            <RadzenDatePicker Name="BornDate" Stryle="width:100%" @bind-Value="oclient.BornDate" DateFormat="d" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 align-items-lg-start d-flex"></div>
+                        <div class="col-md-7 fieldSpace">
+                            <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" Click="@(args=>saveClient())" />
+                            <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Secondary" Click="@(args=>deleteClient())" />
+                        </div>
+                    </div>
+
+
+                </RadzenFieldset>
+            </div>
+        </div>
+
+
+</RadzenTemplateForm>
+
+@code {
+    [Parameter]
+    public int id { get; set; }
+    Client oclient=new Client();
+    protected async Task saveClient()
+    {
+        await ClientService.saveClient(oclient);
+        NavigationManager.NavigateTo("/ClientList");
+    }
+
+    protected void deleteClient()
+    {
+        NavigationManager.NavigateTo("/ClientList");
+
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        if (id == 0) {
+
+        }
+        else{
+            oclient = await ClientService.getClientDetails(id);
+
+        }
+    }
+
+    private async Task onInputFIle(InputFileChangeEventArgs inputFIleChangeEventArgs) {
+
+        //get the file
+        var file = inputFIleChangeEventArgs.File;
+        //read that file in a byte array
+        var buffer = new byte[file.Size];
+        await file.OpenReadStream().ReadAsync(buffer);
+        //convert byte array to base 64 string
+        oclient.Picture = $"data:image/png;base64,{Convert.ToBase64String(buffer)}";
+
+    }
+
+
+}
